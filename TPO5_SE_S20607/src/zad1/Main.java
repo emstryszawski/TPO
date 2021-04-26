@@ -36,7 +36,8 @@ public class Main {
         es.execute(ctask);
       } else {
         c.connect();
-        c.send("login " + id);
+        String send = c.send("login " + id);
+        System.out.println("send = " + send);
         for(String req : reqList) {
           String res = c.send(req);
           if (showRes) System.out.println(res);
@@ -46,21 +47,21 @@ public class Main {
       }
     });
 
-    if (concur) {
-      ctasks.forEach( task -> {
-        try {
-          String log = task.get();
-          clogs.add(log);
-        } catch (InterruptedException | ExecutionException exc) {
-          System.out.println(exc);
-        }
-      });
-      clogs.forEach( System.out::println);
-      es.shutdown();
-    }
-    s.stopServer();
-    System.out.println("\n=== Server log ===");
-    System.out.println(s.getServerLog());
+//    if (concur) {
+//      ctasks.forEach( task -> {
+//        try {
+//          String log = task.get();
+//          clogs.add(log);
+//        } catch (InterruptedException | ExecutionException exc) {
+//          System.out.println(exc);
+//        }
+//      });
+//      clogs.forEach( System.out::println);
+//      es.shutdown();
+//    }
+//    s.stopServer();
+//    System.out.println("\n=== Server log ===");
+//    System.out.println(s.getServerLog());
   }
 
 }
