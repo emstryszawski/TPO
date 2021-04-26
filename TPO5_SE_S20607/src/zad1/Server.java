@@ -103,7 +103,7 @@ public class Server {
                     CharBuffer cbuf = charset.decode(buffer);
                     while (cbuf.hasRemaining()) {
                         char c = cbuf.get();
-                        if (c == '\n') break readLoop;
+                        if (c == '$') break readLoop;
                         requestBuffer.append(c);
                     }
                 }
@@ -113,18 +113,20 @@ public class Server {
             System.out.println("request = " + request);
 
             if (request.contains("login")) {
-                write(client, "logged in\n");
+                write(client, "logged in");
             }
 
             else if (Time.isDate(request)) {
-                write(client, "date\n");
+                System.out.println("date");
+                write(client, "date");
             }
 
             else if (Time.isDateTime(request)) {
-                write(client, "dateTime\n");
+                System.out.println("datetime");
+                write(client, "dateTime");
             }
 
-            else if (request.equals("bye and log transfer")) {
+            else if (request.equals("bye and log transfer$")) {
                 try {
                     client.close();
                     client.socket().close();
@@ -153,6 +155,7 @@ public class Server {
         try {
             responseBuffer.setLength(0);
             responseBuffer.append(message);
+            responseBuffer.append("$");
             buffer.clear();
             buffer.flip();
             buffer = charset.encode(CharBuffer.wrap(responseBuffer));

@@ -48,7 +48,8 @@ public class Client {
     }
 
     public String send(String req) {
-        req += '\n';
+        req += '$';
+        System.out.println("req = " + req);
         buffer.clear();
         String message = "";
         try {
@@ -68,14 +69,14 @@ public class Client {
                     CharBuffer cbuf = charset.decode(buffer);
                     while (cbuf.hasRemaining()) {
                         char c = cbuf.get();
-                        if (c == '\n') break readLoop;
+                        if (c == '$') break readLoop;
                         responseBuffer.append(c);
                     }
                 }
             }
             message = responseBuffer.toString();
             System.out.println("message = " + message);
-            if (req.equals("bye and log transfer\n")) {
+            if (req.equals("bye and log transfer$")) {
                 channel.close();
                 channel.socket().close();
             }
