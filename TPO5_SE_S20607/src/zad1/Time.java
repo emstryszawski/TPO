@@ -106,7 +106,11 @@ public class Time {
         return bigDecimal.setScale(2, RoundingMode.HALF_UP).stripTrailingZeros();
     }
 
-    private static boolean isDateTime(String date) {
+    public static boolean isDateTime(String date) {
         return date.split("T").length == 2;
+    }
+
+    public static boolean isDate(String date) {
+        return !date.contains("T");
     }
 }

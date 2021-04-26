@@ -10,10 +10,12 @@ package zad1;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -23,16 +25,18 @@ public class Server {
     
     private final String host;
     private final int port;
-    
+    ServerSocketChannel serverChannel;
+
     public Server(String host, int port) {
         this.host = host;
         this.port = port;
     }
+    private final Charset charset = Charset.forName("ISO-8859-2");
 
     public void startServer() {
         new Thread(() -> {
             try {
-                ServerSocketChannel serverChannel = ServerSocketChannel.open();
+                serverChannel = ServerSocketChannel.open();
                 serverChannel.socket().bind(new InetSocketAddress(host, port));
                 serverChannel.configureBlocking(false);
 
@@ -40,40 +44,36 @@ public class Server {
                 serverChannel.register(selector, OP_ACCEPT);
 
                 while (true) {
-                    selector.select();
-                    Set<SelectionKey> keys = selector.selectedKeys();
 
+                    int select = selector.select();
+
+                    if (select == 0)
+                        continue;
+
+                    Set<SelectionKey> keys = selector.selectedKeys();
                     Iterator<SelectionKey> iterator = keys.iterator();
+
                     while (iterator.hasNext()) {
+
                         SelectionKey key = iterator.next();
                         iterator.remove();
+
                         if (key.isAcceptable()) {
                             SocketChannel client = serverChannel.accept();
-                            System.out.println("Connection established");
+                            System.out.println("client.isConnected() = " + client.isConnected());
                             client.configureBlocking(false);
                             client.register(selector, OP_READ);
+                            continue;
                         }
 
                         if (key.isReadable()) {
                             SocketChannel client = (SocketChannel) key.channel();
-                            ByteBuffer buffer = ByteBuffer.allocate(1024);
-                            client.read(buffer);
-                            String messageFromClient = new String(buffer.array());
-                            System.out.println("messageFromClient = " + messageFromClient);
-                            if (messageFromClient.equals("bye and log transfer"))
-                                client.socket().close();
-                            client.register(selector, OP_WRITE);
+                            read(client);
                         }
 
                         if (key.isWritable()) {
                             SocketChannel client = (SocketChannel) key.channel();
-                            String response = "hi - from non-blocking server";
-                            byte[] bs = response.getBytes();
-                            ByteBuffer buffer = ByteBuffer.allocate(1024);
-                            buffer.put(bs);
-
-                            int write = client.write(buffer);
-//                            System.out.println("write = " + write);
+                            client.write(ByteBuffer.wrap("hi".getBytes()));
                         }
                     }
                 }
@@ -83,7 +83,101 @@ public class Server {
         }).start();
     }
 
+    ByteBuffer buffer = ByteBuffer.allocate(1024);
+    StringBuffer requestBuffer = new StringBuffer(); // żądanie
+    StringBuffer responseBuffer = new StringBuffer(); // odpowiedź
+
+    private void read(SocketChannel client) {
+        // reading from server
+
+        if (!client.isOpen()) return;
+
+        try {
+            requestBuffer.setLength(0);
+            buffer.clear();
+            readLoop:
+            while (true) {
+                int n = client.read(buffer);
+                if (n > 0) {
+                    buffer.flip();
+                    CharBuffer cbuf = charset.decode(buffer);
+                    while (cbuf.hasRemaining()) {
+                        char c = cbuf.get();
+                        if (c == '\n') break readLoop;
+                        requestBuffer.append(c);
+                    }
+                }
+            }
+
+            String request = requestBuffer.toString();
+            System.out.println("request = " + request);
+
+            if (request.contains("login")) {
+                write(client, "logged in\n");
+            }
+
+            else if (Time.isDate(request)) {
+                write(client, "date\n");
+            }
+
+            else if (Time.isDateTime(request)) {
+                write(client, "dateTime\n");
+            }
+
+            else if (request.equals("bye and log transfer")) {
+                try {
+                    client.close();
+                    client.socket().close();
+                } catch (IOException e1) {
+                    System.out.println(e1);
+                }
+            }
+
+            else {
+                System.out.println("bad request");
+                throw new IOException();
+            }
+
+        } catch (IOException e) {
+            try {
+                client.close();
+                client.socket().close();
+            } catch (IOException e1) {
+                System.out.println(e1);
+            }
+        }
+    }
+
+    private void write(SocketChannel client, String message) {
+        if (!client.isOpen()) return;
+        try {
+            responseBuffer.setLength(0);
+            responseBuffer.append(message);
+            buffer.clear();
+            buffer.flip();
+            buffer = charset.encode(CharBuffer.wrap(responseBuffer));
+            client.write(buffer);
+        } catch (IOException e) {
+            try {
+                client.close();
+                client.socket().close();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+    }
+
     public void stopServer() {
+        try {
+            if (serverChannel.isOpen()) {
+                serverChannel.close();
+                serverChannel.socket().close();
+                System.exit(1);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();;
+            System.exit(1);
+        }
 
     }
 

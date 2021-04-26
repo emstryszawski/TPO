@@ -6,11 +6,14 @@
 
 package zad1;
 
+import jdk.internal.dynalink.support.NameCodec;
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 
 public class Client {
@@ -19,6 +22,10 @@ public class Client {
     private final int port;
     private final String id;
     private SocketChannel channel;
+    private Charset charset = Charset.forName("ISO-8859-2");
+    ByteBuffer buffer = ByteBuffer.allocateDirect(512);
+    StringBuffer requestBuffer = new StringBuffer(); // żądanie
+    StringBuffer responseBuffer = new StringBuffer(); // odpowiedź
 
     public Client(String host, int port, String id) {
         this.host = host;
@@ -29,52 +36,49 @@ public class Client {
     public void connect() {
         try {
             channel = SocketChannel.open();
-            channel.configureBlocking(false);
             channel.connect(new InetSocketAddress(host, port));
+            channel.configureBlocking(false);
 
-            System.out.println("Connecting...");
             while (!channel.finishConnect()) {
-                Thread.sleep(500);
-                System.out.println("Connecting...");
+
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             System.out.println("Unknown host [Client -> Server]");
         }
-        System.out.println("Connected");
     }
 
     public String send(String req) {
-        ByteBuffer inBuf = ByteBuffer.allocateDirect(512);
-        ByteBuffer outBuf = ByteBuffer.allocateDirect(512);
+        req += '\n';
+        buffer.clear();
         String message = "";
         try {
-            outBuf.put(req.getBytes());
-            outBuf.flip();
-            channel.write(outBuf);
+            // writing to server
+            buffer.put(req.getBytes());
+            buffer.flip();
+            channel.write(buffer);
 
+//             reading from server
+            responseBuffer.setLength(0);
+            buffer.clear();
+            readLoop:
             while (true) {
-
-                inBuf.clear();
-
-                int readBytes = channel.read(inBuf);
-
-                if (readBytes == 0) {
-                    continue;
-                }
-                else if (readBytes == -1) {
-
-                    break;
-                }
-                else {
-                    inBuf.flip();
-                    System.out.println("inBuf.get() = " + inBuf.get());
-                    if (readBytes > 0) {
-                        CharBuffer charBuffer = inBuf.asCharBuffer();
-                        System.out.println("charBuffer.get() = " + charBuffer.get());
+                int n = channel.read(buffer);
+                if (n > 0) {
+                    buffer.flip();
+                    CharBuffer cbuf = charset.decode(buffer);
+                    while (cbuf.hasRemaining()) {
+                        char c = cbuf.get();
+                        if (c == '\n') break readLoop;
+                        responseBuffer.append(c);
                     }
                 }
             }
-            channel.close();
+            message = responseBuffer.toString();
+            System.out.println("message = " + message);
+            if (req.equals("bye and log transfer\n")) {
+                channel.close();
+                channel.socket().close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -18,7 +18,7 @@ public class Main {
     String host = opts.getHost();
     int port = opts.getPort();
     boolean concur =  opts.isConcurMode();
-    boolean showRes = opts.isShowSendRes();
+    boolean showRes = true;
     Map<String, List<String>> clRequests = opts.getClientsMap();
     ExecutorService es = Executors.newCachedThreadPool();
     List<ClientTask> ctasks = new ArrayList<>();
@@ -36,8 +36,7 @@ public class Main {
         es.execute(ctask);
       } else {
         c.connect();
-        String send = c.send("login " + id);
-        System.out.println("send = " + send);
+        c.send("login " + id);
         for(String req : reqList) {
           String res = c.send(req);
           if (showRes) System.out.println(res);
@@ -59,9 +58,9 @@ public class Main {
 //      clogs.forEach( System.out::println);
 //      es.shutdown();
 //    }
-//    s.stopServer();
-//    System.out.println("\n=== Server log ===");
-//    System.out.println(s.getServerLog());
+    s.stopServer();
+    System.out.println("\n=== Server log ===");
+    System.out.println(s.getServerLog());
   }
 
 }
