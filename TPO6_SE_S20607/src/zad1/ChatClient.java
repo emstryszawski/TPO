@@ -6,6 +6,7 @@
 
 package zad1;
 
+
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -13,32 +14,36 @@ import java.nio.CharBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 
-public class Client {
+public class ChatClient {
 
-    private final String host;
-    private final int port;
     private final String id;
+    private final InetSocketAddress address;
+    private final StringBuilder view;
     private final Charset charset = Charset.forName("ISO-8859-2");
     private SocketChannel channel;
 
-    public Client(String host, int port, String id) {
-        this.host = host;
-        this.port = port;
+    public ChatClient(String host, int port, String id) {
         this.id = id;
+        address = new InetSocketAddress(host, port);
+        view = new StringBuilder("=== " + id + " chat view\n");
     }
 
-    public void connect() {
+    public void login() {
         try {
             channel = SocketChannel.open();
-            channel.connect(new InetSocketAddress(host, port));
+            channel.connect(address);
             channel.configureBlocking(false);
-
+            send("log in " + id);
         } catch (IOException e) {
-            System.out.println("Unknown host [Client -> Server]");
+            view.append("***").append(e.toString());
         }
     }
 
-    public String send(String req) {
+    public void logout() {
+        send("log out");
+    }
+
+    public void send(String req) {
         StringBuilder response = new StringBuilder();
         try {
             ByteBuffer buffer = ByteBuffer.wrap(req.getBytes());
@@ -58,13 +63,14 @@ public class Client {
                 buffer.clear();
                 read = channel.read(buffer);
             }
+//            System.out.println("response = " + response);
+            view.append(response);
         } catch (IOException e) {
-            e.printStackTrace();
+            view.append("***").append(e.toString());
         }
-        return response.toString();
     }
 
-    public String getId() {
-        return id;
+    public String getChatView() {
+        return view.toString();
     }
 }

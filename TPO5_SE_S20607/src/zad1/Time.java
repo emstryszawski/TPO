@@ -12,11 +12,17 @@ import java.math.RoundingMode;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.util.Locale;
 
 public class Time {
+
+    private static final Locale locale = new Locale("pl");
+    private static final DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy (EEEE)", locale);
+    private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy (EEEE) 'godz.' HH:mm", locale);
+    private static final ZoneId zone = ZoneId.of("Europe/Warsaw");
 
     public static String passed(String from, String to) {
         StringBuilder builder = new StringBuilder();
@@ -28,13 +34,6 @@ public class Time {
         LocalDate fromDate = null;
         LocalDate toDate = null;
 
-        Locale locale = new Locale("pl");
-        ZoneId zone = ZoneId.of("Europe/Warsaw");
-
-        DateTimeFormatter dateFormatter =
-                DateTimeFormatter.ofPattern("d MMMM yyyy (EEEE)", locale);
-        DateTimeFormatter dateTimeFormatter
-                = DateTimeFormatter.ofPattern("d MMMM yyyy (EEEE) 'godz.' HH:mm", locale);
 
         try {
             if (isDateTime(from) && isDateTime(to)) {
@@ -107,10 +106,20 @@ public class Time {
     }
 
     public static boolean isDateTime(String date) {
-        return date.split("T").length == 2;
+        try {
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm").withResolverStyle(ResolverStyle.STRICT).parse(date);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+        return true;
     }
 
     public static boolean isDate(String date) {
-        return !date.contains("T");
+        try {
+            DateTimeFormatter.ofPattern("yyyy-MM-dd").withResolverStyle(ResolverStyle.STRICT).parse(date);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+        return true;
     }
 }

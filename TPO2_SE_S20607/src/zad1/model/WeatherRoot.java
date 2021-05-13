@@ -1,6 +1,8 @@
 package zad1.model;
 
-public class Root{
+import java.util.List;
+
+public class WeatherRoot {
     public Coord coord;
     public List<Weather> weather;
     public String base;

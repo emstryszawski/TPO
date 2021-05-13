@@ -5,12 +5,26 @@ import zad1.view.View;
 
 public class Controller {
 
-    private View view;
-    private Service service;
-
     public Controller(View view, Service service) {
-        this.view = view;
-        this.service = service;
-        view.getWeatherJsonArea().setText(service.getWeatherJson());
+
+        view.addAcceptListener(action -> {
+            String country = view.getCountry();
+            String city = view.getCity();
+            String rate = view.getRate();
+
+            service.setLocale(country);
+
+            view.setWeather(service.getWeather(city));
+            view.setTemperature(service.getTemperature(city) + "");
+            view.setBaseRate(service.getBaseRate());
+            view.setRateLabelResult(service.getRateFor(rate) + "");
+            view.setNbpRateResult(service.getNBPRate() + "");
+            view.setWeb(service.getWeb(city));
+        });
+
+        view.addConvertListener(action -> {
+            Double rate = service.getRateFor(view.getRate());
+            view.setRateLabelResult(rate + "");
+        });
     }
 }

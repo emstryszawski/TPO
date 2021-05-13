@@ -14,10 +14,9 @@ import zad1.view.View;
 import javax.swing.*;
 
 public class Main {
-
   public static void main(String[] args) {
-    Service s = new Service("Poland");
-    String weatherJson = s.getWeather("Warsaw");
+    Service s = new Service("United Kingdom");
+    String weatherJson = s.getWeather("London");
     Double rate1 = s.getRateFor("USD");
     Double rate2 = s.getNBPRate();
     // ...
@@ -25,9 +24,20 @@ public class Main {
     SwingUtilities.invokeLater(
             () -> {
               View view = new View();
-              s.setWeatherJson(weatherJson);
-              s.setRate(rate1);
-              s.setNBPrate(rate2);
+              String country = "United Kingdom";
+              String city = "London";
+              String rate = "USD";
+
+              s.setLocale(country);
+              view.setCountry(country);
+              view.setCity(city);
+              view.setWeather(weatherJson);
+              view.setTemperature(s.getTemperature(city) + "");
+              view.setBaseRate(s.getBaseRate());
+              view.setRateText(rate);
+              view.setRateLabelResult(rate1 + "");
+              view.setNbpRateResult(rate2 + "");
+              view.setWeb(s.getWeb(city));
               new Controller(view, s);
             });
   }

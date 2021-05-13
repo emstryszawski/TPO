@@ -8,32 +8,25 @@ package zad1;
 
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
-public class ClientTask implements Runnable {
+public class ClientTask extends FutureTask<String> {
 
-    public static ClientTask create(Client c, List<String> reqList, boolean showRes) {
-        return new ClientTask() {
-            @Override
-            public void run() {
-                c.connect();
-                c.send("login " + c.getId());
-                for(String req : reqList) {
-                    String res = c.send(req);
-                    if (showRes) System.out.println(res);
-                }
-                String clog = c.send("bye and log transfer");
-                System.out.println(clog);
+    private ClientTask(Callable<String> callable) {
+        super(callable);
+    }
+
+    public static ClientTask create(Client client, List<String> requests, boolean showSendResult) {
+
+        return new ClientTask(() -> {
+            client.connect();
+            client.send("login " + client.getId());
+            for (String req : requests) {
+                String res = client.send(req);
+                if (showSendResult) System.out.println(res);
             }
-        };
-    }
-
-    public String get() throws InterruptedException, ExecutionException {
-        return "";
-    }
-
-    @Override
-    public void run() {
-
+            return client.send("bye and log transfer");
+        });
     }
 }

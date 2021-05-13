@@ -1,11 +1,4 @@
-/**
- *
- *  @author Stryszawski Emil S20607
- *
- */
-
 package zad1;
-
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -18,11 +11,11 @@ public class Main {
     String host = opts.getHost();
     int port = opts.getPort();
     boolean concur =  opts.isConcurMode();
-    boolean showRes = true;
+    boolean showRes = opts.isShowSendRes();
     Map<String, List<String>> clRequests = opts.getClientsMap();
     ExecutorService es = Executors.newCachedThreadPool();
     List<ClientTask> ctasks = new ArrayList<>();
-    List<String> clogs = new ArrayList<>(); 
+    List<String> clogs = new ArrayList<>();
 
     Server s = new Server(host, port);
     s.startServer();
@@ -46,18 +39,18 @@ public class Main {
       }
     });
 
-//    if (concur) {
-//      ctasks.forEach( task -> {
-//        try {
-//          String log = task.get();
-//          clogs.add(log);
-//        } catch (InterruptedException | ExecutionException exc) {
-//          System.out.println(exc);
-//        }
-//      });
-//      clogs.forEach( System.out::println);
-//      es.shutdown();
-//    }
+    if (concur) {
+      ctasks.forEach( task -> {
+        try {
+          String log = task.get();
+          clogs.add(log);
+        } catch (InterruptedException | ExecutionException exc) {
+          System.out.println(exc);
+        }
+      });
+      clogs.forEach( System.out::println);
+      es.shutdown();
+    }
     s.stopServer();
     System.out.println("\n=== Server log ===");
     System.out.println(s.getServerLog());
